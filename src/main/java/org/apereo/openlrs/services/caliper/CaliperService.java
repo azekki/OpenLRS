@@ -15,28 +15,55 @@
  */
 package org.apereo.openlrs.services.caliper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.log4j.Logger;
+import org.apereo.openlrs.model.OpenLRSEntity;
 import org.apereo.openlrs.model.caliper.CaliperEvent;
+import org.apereo.openlrs.model.event.EventConversionService;
 import org.apereo.openlrs.services.EventService;
-import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author ggilbert
- *
+ * @author Lance E Sloan (lsloan at umich dot edu)
  */
 @Service
-@Profile({"redis","mongo"})
 public class CaliperService extends EventService {
 
-	private Logger log = Logger.getLogger(CaliperService.class);
-	
-	public void post(String organizationId, CaliperEvent caliperEvent) {
-    	if (log.isDebugEnabled()) {
-    		log.debug(String.format("Caliper event: %s",caliperEvent));
-    	}
-    	
+    private Logger log = Logger.getLogger(CaliperService.class);
+
+    @Autowired
+    private EventConversionService eventConversionService;
+
+    public void post(String organizationId, CaliperEvent caliperEvent) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Caliper event: %s", caliperEvent));
+        }
+
         getTierOneStorage().save(caliperEvent);
-	}
-	
+    }
+
+    public JsonNode getJsonNode(String id) {
+        OpenLRSEntity entity = getTierTwoStorage().findById(id);
+        return eventConversionService.toCaliperJson(entity);
+    }
+
+    public List<JsonNode> getJsonNodes(Map<String, String> filterMap) {
+        List<JsonNode> result = null;
+        List<OpenLRSEntity> entities = null;
+
+        if (filterMap != null && !filterMap.isEmpty()) {
+            entities = getTierTwoStorage().findWithFilters(filterMap);
+        } else {
+            entities = getTierTwoStorage().findAll();
+        }
+
+        result = eventConversionService.toCaliperJsonList(entities);
+
+        return result;
+    }
 }
