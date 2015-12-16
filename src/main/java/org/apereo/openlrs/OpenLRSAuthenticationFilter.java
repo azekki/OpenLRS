@@ -28,7 +28,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apereo.openlrs.credentials.Credentials;
 import org.apereo.openlrs.utils.OAuthUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -45,16 +47,9 @@ public class OpenLRSAuthenticationFilter extends OncePerRequestFilter {
 	@Value("${auth.enabled}")
 	private boolean enabled;
 	
-	@Value("${auth.basic.username}")
-	private String username;
-	@Value("${auth.basic.password}")
-	private String password;
-	
-	@Value("${auth.oauth.key}")
-	private String key;
-	@Value("${auth.oauth.secret}")
-	private String secret;
 
+	@Autowired Credentials credentials;
+	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request,
 			HttpServletResponse response, FilterChain filterChain)
@@ -96,34 +91,39 @@ public class OpenLRSAuthenticationFilter extends OncePerRequestFilter {
 			
 			// TODO
 			// replace with multi-tenant support & protocol based retry logic
-			if (oauth_consumer_key != null && oauth_consumer_key.equals(key)) {
-				
-				TreeMap<String, String> normalizedParams = new TreeMap<String, String>(oauth_parameters);
-				Map<String, String []> params = request.getParameterMap();
-				if (params != null && !params.isEmpty()) {
-					for (String key : params.keySet()) {
-						String [] values = params.get(key);
-						String value = null;
-						if (values != null) {
-							value = values[0];
+			if (oauth_consumer_key != null) {
+				String storedKey = credentials.getKey(oauth_consumer_key);
+				if(storedKey != null && oauth_consumer_key.equals(storedKey)){
+					TreeMap<String, String> normalizedParams = new TreeMap<String, String>(oauth_parameters);
+					Map<String, String []> params = request.getParameterMap();
+					if (params != null && !params.isEmpty()) {
+						for (String key : params.keySet()) {
+							String [] values = params.get(key);
+							String value = null;
+							if (values != null) {
+								value = values[0];
+							}
+							normalizedParams.put(key, value);
 						}
-						normalizedParams.put(key, value);
+					}
+					
+					final String signature = oauth_parameters.get("oauth_signature");
+					final String calculatedSignature = OAuthUtils.sign(credentials.getSecretByKey(storedKey), normalizedParams, 
+							OAuthUtils.mapToJava(oauth_parameters.get("oauth_signature_method")), request.getMethod(), request.getRequestURL().toString());
+
+					if (signature.equals(calculatedSignature)) {
+						filterChain.doFilter(request, response);
+					}
+					else {
+						unauthorized(response, "Signatures do not match", "OAuth");
 					}
 				}
-				
-				final String signature = oauth_parameters.get("oauth_signature");
-				final String calculatedSignature = OAuthUtils.sign(secret, normalizedParams, 
-						OAuthUtils.mapToJava(oauth_parameters.get("oauth_signature_method")), request.getMethod(), request.getRequestURL().toString());
-				
-				if (signature.equals(calculatedSignature)) {
-					filterChain.doFilter(request, response);
-				}
-				else {
-					unauthorized(response, "Signatures do not match", "OAuth");
+				else{
+					unauthorized(response, "Invalid consumer key", "OAuth");
 				}
 			}
 			else {
-				unauthorized(response, "Invalid consumer key", "OAuth");
+				unauthorized(response, "Invalid consumer key is null", "OAuth");
 			}
 			// end TODO
 		}
@@ -142,15 +142,15 @@ public class OpenLRSAuthenticationFilter extends OncePerRequestFilter {
 	        if (basic.equalsIgnoreCase("Basic") || basic.equalsIgnoreCase("Base64")) {
 	        	
 	        	try {
-	        		String credentials = new String(Base64.decodeBase64(st.nextToken()), "UTF-8");
+	        		String credentialsHeader = new String(Base64.decodeBase64(st.nextToken()), "UTF-8");
 
-	        		int colon = credentials.indexOf(":");
+	        		int colon = credentialsHeader.indexOf(":");
 	            
 	        		if (colon != -1) {
-	        			String _username = credentials.substring(0, colon).trim();
-	        			String _password = credentials.substring(colon + 1).trim();
-	 
-	        			if (!username.equals(_username) || !password.equals(_password)) {
+	        			String _username = credentialsHeader.substring(0, colon).trim();
+	        			String _password = credentialsHeader.substring(colon + 1).trim();
+	        			log.info("_username: " + _username + " _password " + _password);
+	        			if (!credentials.getUsername(_username).equals(_username) || !credentials.getPassword(_username).equals(_password)) {
 	        				unauthorized(response, "Bad credentials", "Basic");
 	        			}
 	        			else {

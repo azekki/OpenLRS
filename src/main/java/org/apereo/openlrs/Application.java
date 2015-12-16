@@ -39,8 +39,6 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lti.oauth.OAuthFilter;
-
 /**
  * @author ggilbert
  *
@@ -54,7 +52,6 @@ public class Application extends SpringBootServletInitializer {
 	@Autowired private OpenLRSAuthenticationFilter openLRSAuthenticationFilter;
 	@Autowired private XAPIRequestValidationFilter xapiRequestValidationFilter;
 	@Autowired private CORSFilter corsFilter;
-	@Autowired private OAuthFilter oAuthFilter;
 	
 	public static void main(final String[] args) {
 		SpringApplication springApplication = new SpringApplication(Application.class);
@@ -108,17 +105,6 @@ public class Application extends SpringBootServletInitializer {
 		urls.add("/xAPI/*");
 		registrationBean.setUrlPatterns(urls);
 		registrationBean.setOrder(3);
-		return registrationBean;
-	}
-	
-	@Bean
-	public FilterRegistrationBean oAuthFilterBean() {
-		FilterRegistrationBean registrationBean = new FilterRegistrationBean();
-		registrationBean.setFilter(oAuthFilter);
-		List<String> urls = new ArrayList<String>(1);
-		urls.add("/lti");
-		registrationBean.setUrlPatterns(urls);
-		registrationBean.setOrder(4);
 		return registrationBean;
 	}
 	
