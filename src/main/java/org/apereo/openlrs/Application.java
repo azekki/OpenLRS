@@ -25,6 +25,8 @@ import org.springframework.boot.actuate.system.ApplicationPidFileWriter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchAutoConfiguration;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
 import org.springframework.boot.context.embedded.FilterRegistrationBean;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
@@ -45,7 +47,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 
 @Configuration
-@EnableAutoConfiguration(exclude = {ElasticsearchAutoConfiguration.class,ElasticsearchDataAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {ElasticsearchAutoConfiguration.class,
+    ElasticsearchDataAutoConfiguration.class,
+    HibernateJpaAutoConfiguration.class,
+    DataSourceAutoConfiguration.class})
 @ComponentScan(basePackages={"org.apereo.openlrs","lti"})
 public class Application extends SpringBootServletInitializer {
 	
