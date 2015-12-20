@@ -76,83 +76,14 @@ import io.searchbox.params.Parameters;
 public class XApiOnlyAwsElasticsearchTierTwoStorage implements TierTwoStorage<OpenLRSEntity> {
     
     private Logger log = LoggerFactory.getLogger(XApiOnlyAwsElasticsearchTierTwoStorage.class);
-
-    @Value("${es.bulkIndexSize:100}")
-    private int bulkIndexSize;
     
-    @Value("${es.bulkIndexScheduleRateSecond:1}")
-    private int bulkIndexScheduleRateSecond;
     @Autowired JestClient jestClient;
-
-    private ScheduledExecutorService executorService = null;
     
     private final String STATEMENT_INDEX = "openlrsstatement";
     private final String STATEMENT_TYPE = "statement";
     private final String METADATA_INDEX = "openlrsstatementmetadata";
     private final String METADATA_TYPE = "statement_metadata";
     
-    private LinkedBlockingQueue<Statement> statementQueue = new LinkedBlockingQueue<Statement>();
-    private Runnable task = new Runnable() {
-        
-        @Override
-        public void run() {
-            int size = statementQueue.size();
-            
-            if (size > 0) {
-                
-                if (size > bulkIndexSize) {
-                    size = bulkIndexSize;
-                }
-                List<OpenLRSEntity> statementsToIndex = new ArrayList<OpenLRSEntity>();
-                List<StatementMetadata> metadataToIndex = new ArrayList<StatementMetadata>();
-
-                for (int i = 0; i < size; i++) {
-                    Statement statement = statementQueue.poll();
-                    if (statement != null) {
-                        statementsToIndex.add(statement);
-                        metadataToIndex.add(MetadataUtils.extractMetadata(statement));
-                    }
-                }
-
-                if (!statementsToIndex.isEmpty()) {
-                    try {
-                        saveAll(statementsToIndex);
-                        saveAllMetaData(metadataToIndex);
-                    }
-                    catch (Exception e) {
-                        log.error("Unable to index statements");
-                    }
-                }
-            }
-        }
-    };
-    
-    public OpenLRSEntity save(OpenLRSEntity entity) {
-        if (entity != null && Statement.OBJECT_KEY.equals(entity.getObjectKey())) {
-            try {
-                if (log.isDebugEnabled()) {
-                    log.debug("statement to index: {}",entity);
-                }
-                statementQueue.add((Statement)entity);
-                
-                if (executorService == null) {
-                    log.debug("Init executorService with rate "+bulkIndexScheduleRateSecond);
-                    executorService = Executors.newSingleThreadScheduledExecutor();
-                    executorService.scheduleAtFixedRate(task, 0, bulkIndexScheduleRateSecond, TimeUnit.SECONDS);
-                }
-            } 
-            catch (Exception e) {
-                log.error(e.getMessage(),e);
-                e.printStackTrace();
-            } 
-        }
-        else if (entity != null) {
-            log.warn("XApiOnlyAwsElasticsearchTierTwoStorage does not support "+entity.getObjectKey());
-        }
-        
-        return entity;
-    }
-
     @Override
     public List<OpenLRSEntity> findAll() {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
@@ -327,27 +258,6 @@ public class XApiOnlyAwsElasticsearchTierTwoStorage implements TierTwoStorage<Op
         }
         return 0;
     }
-    @Override
-    public List<OpenLRSEntity> saveAll(Collection<OpenLRSEntity> entities) {
-        if (entities != null && !entities.isEmpty()) {
-            Builder builder = new Bulk.Builder().defaultIndex(STATEMENT_INDEX).defaultType(STATEMENT_TYPE);
-            
-            for (OpenLRSEntity entity : entities) {
-                Statement statement = (Statement) entity;
-                builder.addAction(new Index.Builder(statement.toJSON()).id(statement.getId()).build());
-            }
-            Bulk bulk = builder.build();
-            try {
-                jestClient.execute(bulk);
-            } catch (IOException e) {
-                log.error(e.getMessage(),e);
-                e.printStackTrace();
-            }
-        }
-        
-        
-        return new ArrayList<OpenLRSEntity>(entities);
-    }
 
     public ArrayList<StatementMetadata> saveAllMetaData(Collection<StatementMetadata> metaDataEntries) {
         if (metaDataEntries != null && !metaDataEntries.isEmpty()) {
@@ -432,6 +342,22 @@ public class XApiOnlyAwsElasticsearchTierTwoStorage implements TierTwoStorage<Op
         if (statements != null) {
             return new PageImpl<OpenLRSEntity>(IteratorUtils.toList(statements.iterator()));
         }
+        return null;
+    }
+    
+    /**
+     * save is handled by AWS lambda
+     */
+    @Override
+    public OpenLRSEntity save(OpenLRSEntity entitie) {
+        return null;
+    }
+    
+    /**
+     * saveAll is handled by AWS lambda
+     */
+    @Override
+    public List<OpenLRSEntity> saveAll(Collection<OpenLRSEntity> entities) {
         return null;
     }
 }

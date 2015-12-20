@@ -25,6 +25,8 @@ import org.springframework.boot.actuate.system.ApplicationPidFileWriter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchAutoConfiguration;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
 import org.springframework.boot.context.embedded.FilterRegistrationBean;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
@@ -39,22 +41,22 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lti.oauth.OAuthFilter;
-
 /**
  * @author ggilbert
  *
  */
 
 @Configuration
-@EnableAutoConfiguration(exclude = {ElasticsearchAutoConfiguration.class,ElasticsearchDataAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {ElasticsearchAutoConfiguration.class,
+    ElasticsearchDataAutoConfiguration.class,
+    HibernateJpaAutoConfiguration.class,
+    DataSourceAutoConfiguration.class})
 @ComponentScan(basePackages={"org.apereo.openlrs","lti"})
 public class Application extends SpringBootServletInitializer {
 	
 	@Autowired private OpenLRSAuthenticationFilter openLRSAuthenticationFilter;
 	@Autowired private XAPIRequestValidationFilter xapiRequestValidationFilter;
 	@Autowired private CORSFilter corsFilter;
-	@Autowired private OAuthFilter oAuthFilter;
 	
 	public static void main(final String[] args) {
 		SpringApplication springApplication = new SpringApplication(Application.class);
@@ -108,17 +110,6 @@ public class Application extends SpringBootServletInitializer {
 		urls.add("/xAPI/*");
 		registrationBean.setUrlPatterns(urls);
 		registrationBean.setOrder(3);
-		return registrationBean;
-	}
-	
-	@Bean
-	public FilterRegistrationBean oAuthFilterBean() {
-		FilterRegistrationBean registrationBean = new FilterRegistrationBean();
-		registrationBean.setFilter(oAuthFilter);
-		List<String> urls = new ArrayList<String>(1);
-		urls.add("/lti");
-		registrationBean.setUrlPatterns(urls);
-		registrationBean.setOrder(4);
 		return registrationBean;
 	}
 	
