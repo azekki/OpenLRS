@@ -1,12 +1,13 @@
 package org.apereo.openlrs.credentials;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("!aws")
-public class CredentialsProfile implements Credentials{
+@ConditionalOnProperty(name="auth.source",havingValue="Properties")
+public class CredentialsProperties implements Credentials{
 	
 	@Value("${auth.basic.username}")
 	private String username;

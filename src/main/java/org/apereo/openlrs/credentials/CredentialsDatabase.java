@@ -3,14 +3,15 @@ package org.apereo.openlrs.credentials;
 import org.apache.log4j.Logger;
 import org.apereo.openlrs.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("aws")
-public class CredentialsAws implements Credentials{
+@ConditionalOnProperty(name="auth.source",havingValue="Database")
+public class CredentialsDatabase implements Credentials{
 
-	private Logger log = Logger.getLogger(CredentialsAws.class);
+	private Logger log = Logger.getLogger(CredentialsDatabase.class);
 	@Autowired private CredentialRepository credentialRepository;
 
 	@Override

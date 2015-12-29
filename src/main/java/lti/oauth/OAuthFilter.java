@@ -38,7 +38,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * @author ggilbert
  *
  */
-@Component
+//@Component
 public class OAuthFilter extends OncePerRequestFilter {
 	
 	private Logger log = Logger.getLogger(OAuthFilter.class);
