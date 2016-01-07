@@ -12,7 +12,6 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.context.annotation.Profile;
 
-@Profile("aws")
 @Entity(name="CREDENTIALS")
 public class Credential {
 
