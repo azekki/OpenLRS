@@ -42,7 +42,7 @@ EXPOSE 8080
 # CMD will be called when starting this container.
 WORKDIR /opt/openlrs/
 # Assumes you will mount to a local directory with a target/application.jar (edit as needed)
-CMD java -server -jar -Djava.security.egd=file:/dev/./urandom  target/openlrs-0.1-SNAPSHOT.jar
+CMD java -server -jar -Djava.security.egd=file:/dev/./urandom target/openlrs-1.0-SNAPSHOT.jar
 
 # Use the following docker commands to run the container 
 # docker build -t openlrs:v1 .
