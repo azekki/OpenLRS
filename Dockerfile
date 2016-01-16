@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright 2015 Unicon (R) Licensed under the
+# Copyright 2016 Unicon (R) Licensed under the
 # Educational Community License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may
 # obtain a copy of the License at
@@ -41,5 +41,12 @@ EXPOSE 8080
 
 # CMD will be called when starting this container.
 WORKDIR /opt/openlrs/
-CMD java -server -jar -Djava.security.egd=file:/dev/./urandom  openlrs-0.1-SNAPSHOT.jar
+# Assumes you will mount to a local directory with a target/application.jar (edit as needed)
+CMD java -server -jar -Djava.security.egd=file:/dev/./urandom  target/openlrs-0.1-SNAPSHOT.jar
 
+# Use the following docker commands to run the container 
+# docker build -t openlrs:v1 .
+# docker stop openlrs
+# docker rm openlrs 
+# docker run -d -v <YOUR_DIRECTORY_THAT_CONTAINS_TARGET_FOLDER>/:/opt/openlrs --name openlrs -p 8080:8080 openlrs:v1
+# docker inspect --format '{{.State.Running}}' openlrs
